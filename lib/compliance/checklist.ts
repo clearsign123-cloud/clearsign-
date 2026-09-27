@@ -1,15 +1,4 @@
 // lib/compliance/checklist.ts
-//
-// The actual substance of the "Compliance Audit" product: a checklist of
-// real England & Wales landlord/letting-agent legal obligations that a
-// tenancy agreement (and the surrounding paperwork trail) should satisfy.
-//
-// This is NOT exhaustive legal advice, and the audit output must say so.
-// It is a genuine, sourced starting checklist that gives the AI analysis
-// step concrete, real things to check for — rather than vague prompting.
-// Review each item against current legislation before relying on it in
-// production; law in this area changes (e.g. Renters' Rights Act reforms
-// phasing in from 2025–2026 will affect Section 21 / fixed-term items).
 
 export type ComplianceCategory =
   | 'deposit_protection'
@@ -50,7 +39,7 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
     title: 'Deposit does not exceed the statutory cap',
     jurisdiction: 'england',
     summary:
-      'Security deposit is capped at 5 weeks\' rent (or 6 weeks if annual rent exceeds £50,000).',
+      "Security deposit is capped at 5 weeks' rent (or 6 weeks if annual rent exceeds £50,000).",
     whatToCheck:
       'Calculate weekly rent from the stated rent and compare the deposit amount against the 5/6-week cap.',
     legalBasis: 'Tenant Fees Act 2019, s.3 and Schedule 1',
@@ -58,11 +47,11 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
   {
     id: 'holding-deposit-cap',
     category: 'fees_and_deposits',
-    title: 'Holding deposit does not exceed one week\'s rent',
+    title: "Holding deposit does not exceed one week's rent",
     jurisdiction: 'england',
-    summary: 'A holding deposit cannot exceed one week\'s rent.',
+    summary: "A holding deposit cannot exceed one week's rent.",
     whatToCheck:
-      'If a holding deposit is mentioned, check it does not exceed one week\'s rent.',
+      "If a holding deposit is mentioned, check it does not exceed one week's rent.",
     legalBasis: 'Tenant Fees Act 2019, s.2',
   },
   {
@@ -73,7 +62,7 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
     summary:
       'Fees for referencing, inventory checks, "administration", credit checks, professional cleaning (beyond a fair usage clause), or renewal are generally banned.',
     whatToCheck:
-      'Scan for any clause charging the tenant a fee outside the permitted list (rent, capped deposit, capped holding deposit, default fees for late rent/lost keys within statutory limits, early termination at the tenant\'s request).',
+      "Scan for any clause charging the tenant a fee outside the permitted list (rent, capped deposit, capped holding deposit, default fees for late rent/lost keys within statutory limits, early termination at the tenant's request).",
     legalBasis: 'Tenant Fees Act 2019, s.1 and Schedule 1',
   },
   {
@@ -120,7 +109,8 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
       'The current version of the government "How to Rent" guide must be given to the tenant at the start of the tenancy — required for a valid Section 21.',
     whatToCheck:
       'Does the agreement confirm the guide was provided, and is there a date/version reference?',
-    legalBasis: 'Deregulation Act 2015, s.35 / Assured Shorthold Tenancy Notices and Prescribed Requirements (England) Regulations 2015',
+    legalBasis:
+      'Deregulation Act 2015, s.35 / Assured Shorthold Tenancy Notices and Prescribed Requirements (England) Regulations 2015',
   },
   {
     id: 'right-to-rent',
@@ -128,7 +118,7 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
     title: 'Right to Rent checks carried out',
     jurisdiction: 'england',
     summary:
-      'Landlords/agents must check and retain evidence of every adult occupier\'s right to rent in the UK.',
+      "Landlords/agents must check and retain evidence of every adult occupier's right to rent in the UK.",
     whatToCheck:
       'Does the agreement or onboarding paperwork reference Right to Rent checks having been completed for all named tenants?',
     legalBasis: 'Immigration Act 2014, Part 3',
@@ -148,7 +138,7 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
   {
     id: 'unfair-terms-repairs',
     category: 'unfair_terms',
-    title: 'No unlawful shifting of the landlord\'s repairing obligations',
+    title: "No unlawful shifting of the landlord's repairing obligations",
     jurisdiction: 'both',
     summary:
       'Clauses making the tenant responsible for structural repairs, or repairs to installations for gas/water/electricity/heating, are void.',
@@ -162,7 +152,7 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
     title: 'No significantly imbalanced or penalty-style clauses',
     jurisdiction: 'both',
     summary:
-      'Terms causing a significant imbalance to the tenant\'s detriment, or disproportionate financial penalties, can be unfair and unenforceable.',
+      "Terms causing a significant imbalance to the tenant's detriment, or disproportionate financial penalties, can be unfair and unenforceable.",
     whatToCheck:
       'Flag clauses like: disproportionate fixed "penalty" fees for late rent beyond a reasonable daily interest rate, blanket bans on statutory rights (e.g. purporting to prevent complaints to the council), or one-sided break/termination rights only for the landlord.',
     legalBasis: 'Consumer Rights Act 2015, Part 2 (unfair terms)',
@@ -173,7 +163,7 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
     title: 'Section 21 validity prerequisites',
     jurisdiction: 'england',
     summary:
-      'A Section 21 notice is invalid if the deposit isn\'t protected/prescribed information served, the EPC/Gas Safety Certificate/How to Rent guide weren\'t provided, or if served within 6 months of certain improvement/emergency remedial notices.',
+      "A Section 21 notice is invalid if the deposit isn't protected/prescribed information served, the EPC/Gas Safety Certificate/How to Rent guide weren't provided, or if served within 6 months of certain improvement/emergency remedial notices.",
     whatToCheck:
       'Cross-reference the deposit, safety certificate, and How to Rent findings above — if any failed, note that this would currently block a valid Section 21 notice.',
     legalBasis: 'Deregulation Act 2015, s.33 and s.36',
@@ -187,7 +177,8 @@ export const COMPLIANCE_CHECKLIST: ComplianceRule[] = [
       'Letting agents holding client money must belong to an approved CMP scheme.',
     whatToCheck:
       'If a letting agent is party to the agreement, check for a CMP scheme reference/certificate number.',
-    legalBasis: 'Client Money Protection Schemes for Property Agents (Requirement to Belong to a Scheme etc.) Regulations 2019',
+    legalBasis:
+      'Client Money Protection Schemes for Property Agents (Requirement to Belong to a Scheme etc.) Regulations 2019',
   },
   {
     id: 'redress-scheme',
