@@ -17,6 +17,19 @@ const rules = [
   { id:"jurisdiction", severity:"high", title:"Agreement may be outside the supported jurisdiction", pattern:/(?:Scotland|Northern Ireland|Scottish secure tenancy|private residential tenancy)/ig, explain:"This checker covers England and Wales only.", fix:"Stop this review and use a checker or adviser familiar with the relevant jurisdiction.", uncertain:true }
 ];
 
+const guidanceByRule = {
+  "deposit-cap": [{ label:"GOV.UK: Tenancy deposit protection", url:"https://www.gov.uk/tenancy-deposit-protection" }],
+  "deposit-protection": [{ label:"GOV.UK: Tenancy deposit protection", url:"https://www.gov.uk/tenancy-deposit-protection" }],
+  "landlord-entry": [{ label:"Shelter: Landlord access and visits", url:"https://england.shelter.org.uk/housing_advice/repairs/landlord_access_and_visits" }],
+  "repair-waiver": [{ label:"GOV.UK: Landlord and tenant responsibilities", url:"https://www.gov.uk/private-renting/your-landlords-safety-responsibilities" }],
+  "penalty-fee": [{ label:"GOV.UK: Tenant Fees Act guidance", url:"https://www.gov.uk/government/collections/tenant-fees-act" }],
+  "unfair-forfeiture": [{ label:"GOV.UK: Evicting tenants in England", url:"https://www.gov.uk/evicting-tenants" }],
+  "break-clause": [{ label:"GOV.UK: Private renting", url:"https://www.gov.uk/private-renting" }],
+  "rent-review": [{ label:"GOV.UK: Rent increases", url:"https://www.gov.uk/private-renting/rent-increases" }],
+  "joint-liability": [{ label:"Shelter: Joint tenancies", url:"https://england.shelter.org.uk/housing_advice/private_renting/joint_tenancies" }],
+  "jurisdiction": [{ label:"GOV.UK: Private renting", url:"https://www.gov.uk/private-renting" }]
+};
+
 function splitClauses(text) {
   const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
   const chunks = [];
@@ -87,6 +100,7 @@ export async function POST(request) {
         quote,
         evidence: matches.slice(1, 6),
         additionalMatches: Math.max(0, matches.length - 1),
+        guidance: guidanceByRule[rule.id] || [],
         issue: rule.explain,
         suggestedFix: rule.fix,
         confidence: "Needs human verification",
