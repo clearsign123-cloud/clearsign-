@@ -54,6 +54,10 @@ export async function POST(request) {
     const file = form.get('file');
     const property = String(form.get('property') || '').trim();
     const reference = String(form.get('reference') || '').trim();
+    const accessCode = String(form.get('accessCode') || '').trim();
+    const configuredCodes = (process.env.AGENT_ACCESS_CODE || process.env.CS_AGENT_ACCESS_CODES || '').split(',').map(value => value.trim()).filter(Boolean);
+    if (!configuredCodes.length) return NextResponse.json({ error: 'Agent access is not configured. Set AGENT_ACCESS_CODE in Vercel environment variables.' }, { status: 503 });
+    if (!configuredCodes.some(value => value === accessCode)) return NextResponse.json({ error: 'Invalid ClearSign agent access code.' }, { status: 401 });
     if (!file || typeof file.arrayBuffer !== 'function') return NextResponse.json({ error: 'No agreement uploaded.' }, { status: 400 });
     if (!property) return NextResponse.json({ error: 'Property/address is required.' }, { status: 400 });
     const buffer = Buffer.from(await file.arrayBuffer());
