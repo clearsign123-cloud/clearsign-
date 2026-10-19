@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
+import pdfParse from 'pdf-parse';
 
 export const runtime = 'nodejs';
 
@@ -38,14 +38,8 @@ function makeFindings(text) {
 }
 
 async function extractPdf(buffer) {
-  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
-  let text = '';
-  for (let pageNo = 1; pageNo <= pdf.numPages; pageNo += 1) {
-    const page = await pdf.getPage(pageNo);
-    const content = await page.getTextContent();
-    text += content.items.map(item => item.str || '').join(' ') + '\n';
-  }
-  return { text, pages: pdf.numPages };
+  const parsed = await pdfParse(buffer);
+  return { text: parsed.text || '', pages: parsed.numpages || null };
 }
 
 export async function POST(request) {
