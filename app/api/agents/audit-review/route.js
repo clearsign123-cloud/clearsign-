@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import pdf from "pdf-parse";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.js";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -44,13 +44,31 @@ export async function POST(request) {
     if (!/\.pdf$|\.txt$/i.test(file.name)) return NextResponse.json({ error:"This first version accepts searchable PDF and .txt files. Word files and scanned-image PDFs are not supported yet." }, { status:415 });
     if (jurisdiction !== "england" && jurisdiction !== "wales") return NextResponse.json({ error:"This checker covers England and Wales only." }, { status:400 });
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (buffer.length === 0) return NextResponse.json({ error:"The uploaded file is empty (0 bytes). Please select the PDF file itself, not a shortcut or placeholder." }, { status:400 });
     let text = "";
     if (/\.pdf$/i.test(file.name)) {
-      const parsed = await pdf(buffer);
-      text = parsed.text || "";
+      try {
+        const getDocument = pdfjs.getDocument || pdfjs.default?.getDocument;
+        if (typeof getDocument !== "function") throw new Error("PDF text engine did not initialise");
+        const loadingTask = getDocument({ data: new Uint8Array(buffer), useSystemFonts: true, isEvalSupported: false });
+        const document = await loadingTask.promise;
+        const pages = [];
+        for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber++) {
+          const page = await document.getPage(pageNumber);
+          const pageContent = await page.getTextContent();
+          pages.push(pageContent.items.map(item => typeof item.str === "string" ? item.str : "").join(" "));
+        }
+        text = pages.join("\\n");
+      } catch (parseError) {
+        console.error("ClearSign PDF extraction failed", parseError?.stack || parseError);
+        return NextResponse.json({ error:"Could not extract text from this PDF (" + String(parseError?.message || "PDF read error").slice(0,140) + "). Try exporting it again from Preview. Scanned/image-only PDFs need OCR." }, { status:422 });
+      }
     } else text = buffer.toString("utf8");
-    text = text.replace(/\u0000/g, "").trim();
-    if (text.length < 120) return NextResponse.json({ error:"Very little text could be extracted. If this is a scanned PDF, run OCR first or upload a text-based PDF." }, { status:422 });
+    text = text.replace(/\\u0000/g, "").trim();
+    if (text.length < 120) {
+      console.warn("ClearSign extracted little text", { filename:file.name, bytes:buffer.length, chars:text.length });
+      return NextResponse.json({ error:"The PDF opened, but almost no selectable text was found. It may be a scanned PDF; this version needs OCR/searchable text before it can review clauses." }, { status:422 });
+    }
     const clauses = splitClauses(text);
     const findings = [];
     const seen = new Set();
@@ -99,6 +117,7 @@ export async function POST(request) {
       ]
     });
   } catch (error) {
-    return NextResponse.json({ error:"The agreement could not be read. Try a searchable PDF or plain-text file." }, { status:500 });
+    console.error("ClearSign agreement review failed", error?.stack || error);
+    return NextResponse.json({ error:"Agreement review failed: " + String(error?.message || "unknown server error").slice(0,180) }, { status:500 });
   }
 }
