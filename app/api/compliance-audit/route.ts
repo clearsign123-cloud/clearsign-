@@ -1,52 +1,49 @@
-// app/api/compliance-audit/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { runComplianceAudit } from '@/lib/compliance/audit';
-import { verifyComplianceAuditPayment } from '@/lib/whop/verifyPayment';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-async function extractTextFromFile(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+function validAgentCode(input: string) {
+  const configured = (process.env.AGENT_ACCESS_CODE || process.env.CS_AGENT_ACCESS_CODES || '')
+    .split(',').map((v) => v.trim()).filter(Boolean);
+  return configured.length > 0 && configured.some((code) => code === input.trim());
+}
 
+async function extractTextFromFile(file: File): Promise<string> {
+  const buffer = Buffer.from(await file.arrayBuffer());
   if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
     const pdfParse = (await import('pdf-parse')).default;
-    const result = await pdfParse(buffer);
-    return result.text;
+    return (await pdfParse(buffer)).text;
   }
-
   return buffer.toString('utf-8');
 }
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get('file') as File | null;
-    const paymentId = formData.get('paymentId') as string | null;
-    const jurisdiction =
-      (formData.get('jurisdiction') as 'england' | 'wales' | null) ?? 'england';
+    const file = formData.get('file');
+    const code = String(formData.get('accessCode') || '');
+    const jurisdiction = formData.get('jurisdiction') === 'wales' ? 'wales' : 'england';
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded.' }, { status: 400 });
+    if (!validAgentCode(code)) {
+      return NextResponse.json({ error: 'Invalid access code. Check the code and try again.' }, { status: 401 });
     }
-    if (!paymentId) {
-      return NextResponse.json(
-        { error: 'Missing paymentId. This audit can only be run against a verified purchase.' },
-        { status: 400 }
-      );
+    if (!file || typeof file === 'string') {
+      return NextResponse.json({ error: 'Please upload a tenancy agreement.' }, { status: 400 });
     }
-
-    await verifyComplianceAuditPayment(paymentId);
-
+    if (file.size > 15 * 1024 * 1024) {
+      return NextResponse.json({ error: 'The file must be 15 MB or smaller.' }, { status: 413 });
+    }
     const text = await extractTextFromFile(file);
+    if (text.trim().length < 200) {
+      return NextResponse.json({ error: 'Not enough readable text was extracted. Please use a text-based PDF or TXT file.' }, { status: 400 });
+    }
     const report = await runComplianceAudit(text, jurisdiction);
-
-    return NextResponse.json(report);
+    return NextResponse.json(report, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[compliance-audit] failed:', message);
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message || 'Audit failed. Please try again.' }, { status: 500 });
   }
 }
