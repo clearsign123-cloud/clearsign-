@@ -39,6 +39,7 @@ export async function POST(request) {
     const tenancyStart = String(form.get("tenancyStart") || "");
     const rent = String(form.get("rent") || "");
     if (!file || typeof file.arrayBuffer !== "function") return NextResponse.json({ error:"Upload a PDF or plain-text agreement first." }, { status:400 });
+    if (file.size === 0) return NextResponse.json({ error:"The selected file is empty (0 bytes). Please choose the actual PDF from Finder and confirm it has a non-zero file size." }, { status:400 });
     if (file.size > 12 * 1024 * 1024) return NextResponse.json({ error:"File is larger than 12 MB. Upload a smaller PDF or text file." }, { status:413 });
     if (!/\.pdf$|\.txt$/i.test(file.name)) return NextResponse.json({ error:"This first version accepts searchable PDF and .txt files. Word files and scanned-image PDFs are not supported yet." }, { status:415 });
     if (jurisdiction !== "england" && jurisdiction !== "wales") return NextResponse.json({ error:"This checker covers England and Wales only." }, { status:400 });
