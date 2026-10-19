@@ -62,30 +62,36 @@ export async function POST(request) {
     }
     const clauses = splitClauses(text);
     const findings = [];
-    const seen = new Set();
     for (const rule of rules) {
       rule.pattern.lastIndex = 0;
+      const matches = [];
       let match;
       while ((match = rule.pattern.exec(text)) !== null) {
-        const snippet = match[0].replace(/\s+/g, " ").trim().slice(0, 420);
-        const key = rule.id + ":" + snippet.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const index = text.toLowerCase().indexOf(snippet.toLowerCase());
-        const before = text.slice(Math.max(0,index-140), index);
-        const headingMatch = before.match(/(?:clause\s+)?(\d+(?:\.\d+)+|\d{1,2})[.)\s:-]+[^\n]{0,100}\n?[^\n]{0,80}$/i);
-        findings.push({
-          id: rule.id + "-" + findings.length,
-          severity: rule.severity,
-          title: rule.title,
-          clauseReference: headingMatch ? "Possible clause " + headingMatch[1] : "Reference not reliably extracted",
-          quote: snippet,
-          issue: rule.explain,
-          suggestedFix: rule.fix,
-          confidence: "Needs human verification",
-          basis: "Keyword/pattern match; not a legal conclusion"
-        });
+        const snippet = match[0].replace(/\\s+/g, " ").trim().slice(0, 420);
+        if (!matches.some(item => item.toLowerCase() === snippet.toLowerCase())) matches.push(snippet);
+        if (match[0].length === 0) rule.pattern.lastIndex++;
       }
+      if (!matches.length) continue;
+      // One finding per rule: related phrases (e.g. deposit protection and
+      // prescribed information) are evidence for the same compliance check,
+      // not separate risks.
+      const quote = matches[0];
+      const index = text.toLowerCase().indexOf(quote.toLowerCase());
+      const before = text.slice(Math.max(0,index-180), index);
+      const headingMatch = before.match(/(?:clause\\s+)?(\\d+(?:\\.\\d+)+|\\d{1,2})[.)\\s:-]+[^\\n]{0,100}\\n?[^\\n]{0,80}$/i);
+      findings.push({
+        id: rule.id,
+        severity: rule.severity,
+        title: rule.title,
+        clauseReference: headingMatch ? "Possible clause " + headingMatch[1] : "Reference not reliably extracted",
+        quote,
+        evidence: matches.slice(1, 6),
+        additionalMatches: Math.max(0, matches.length - 1),
+        issue: rule.explain,
+        suggestedFix: rule.fix,
+        confidence: "Needs human verification",
+        basis: "Keyword/pattern match; not a legal conclusion"
+      });
     }
     const counts = { high:0, medium:0, low:0 };
     findings.forEach(f => counts[f.severity]++);
